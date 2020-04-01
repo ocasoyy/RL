@@ -50,6 +50,7 @@ class DQN:
         self.model = MyModel(num_states, hidden_units, num_actions)
 
         # 경험 리플레이 -- Experience Replay Dataset: buffer
+        # deque로 만들면 더 좋을 것
         self.experience = {'s': [], 'a': [], 'r': [], 'next_s': [], 'done': []}
 
         # Agent는 min_experiences 이상이어야 학습을 진행하며
