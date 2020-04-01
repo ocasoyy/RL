@@ -30,8 +30,8 @@ interactions = 0.5 * tf.reduce_sum(
     keepdims=False
 )
 
-y_hat = w_0 + linear_terms + interactions
-loss = tf.keras.losses.binary_crossentropy(from_logits=True, y_true=y, y_pred=y_hat)
+y_hat = tf.math.sigmoid(w_0 + linear_terms + interactions)
+loss = tf.keras.losses.binary_crossentropy(from_logits=False, y_true=y, y_pred=y_hat)
 
 with tf.GradientTape() as tape:
     grads = tape.gradient(target=loss, sources=[w_0, w, V])
@@ -42,7 +42,7 @@ optimizer.apply_gradients(zip(grads, [w_0, w, V]))
 
 
 # 헙...
-tf.keras.backend.set_floatx('float64')
+tf.keras.backend.set_floatx('float32')
 
 class Model(tf.keras.Model):
   def __init__(self):
@@ -52,7 +52,7 @@ class Model(tf.keras.Model):
     self.V = tf.Variable(tf.random.normal(shape=(p, k)))
 
   def call(self, inputs):
-    linear_terms = tf.reduce_sum(tf.math.multiply(self.w, inputs))
+    linear_terms = tf.reduce_sum(tf.math.multiply(self.w, inputs), axis=1)
     interactions = 0.5 * tf.reduce_sum(
         tf.math.pow(tf.matmul(inputs, self.V), 2)
         - tf.matmul(tf.math.pow(inputs, 2), tf.math.pow(self.V, 2)),
@@ -67,24 +67,14 @@ class Model(tf.keras.Model):
 # Forward
 def grad(model, inputs, targets):
   with tf.GradientTape() as tape:
-    loss = tf.keras.losses.binary_crossentropy(from_logits=True,
+    loss = tf.keras.losses.binary_crossentropy(from_logits=False,
                                                y_true=y,
                                                y_pred=model(inputs))
   return loss, tape.gradient(target=loss, sources=model.trainable_variables)
 
 model = Model()
-
-model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['acc'])
-
-history = model.fit(X, Y, batch_size=8, epochs=10, verbose=1, validation_split=0.2)
-
-# optimizer = tf.keras.optimizers.SGD(learning_rate=0.01)
-
-# y_pred = model(x)
-
-print("초기 손실: {:.3f}".format(tf.keras.losses.binary_crossentropy(from_logits=False,
-                                               y_true=y,
-                                               y_pred=model(x))))
+optimizer = tf.keras.optimizers.SGD(learning_rate=0.01)
+# tf.keras.losses.binary_crossentropy(from_logits=False, y_true=y, y_pred=model(x))
 
 train_ds = tf.data.Dataset.from_tensor_slices((X, Y)).shuffle(600).batch(8)
 
@@ -94,11 +84,10 @@ for i in range(50):
       loss, grads = grad(model, x, y)
       optimizer.apply_gradients(zip(grads, model.trainable_variables))
       
-  if i % 10 == 0:
+  if i % 2== 0:
       print("스텝 {:03d}에서 손실: {:.3f}".format(i, loss))
 
 print("최종 손실: {:.3f}".format(loss(model, x, y)))
-print("W = {}, B = {}".format(model.W.numpy(), model.B.numpy()))
 
 model.predict()
 
