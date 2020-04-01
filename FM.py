@@ -42,6 +42,8 @@ optimizer.apply_gradients(zip(grads, [w_0, w, V]))
 
 
 # 헙...
+tf.keras.backend.set_floatx('float64')
+
 class Model(tf.keras.Model):
   def __init__(self):
     super(Model, self).__init__()
