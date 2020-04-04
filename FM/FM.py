@@ -1,10 +1,11 @@
 # FM
-import numpy as np
+from config import DataBasket
 import pandas as pd
-import tensorflow as tf
-from tensorflow.keras.metrics import BinaryAccuracy
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.metrics import BinaryAccuracy
 
 # GPU 확인
 tf.config.list_physical_devices('GPU')
@@ -14,10 +15,23 @@ tf.config.list_physical_devices('GPU')
 tf.keras.backend.set_floatx('float32')
 
 # 데이터 로드
-scaler = MinMaxScaler()
-file = pd.read_csv('data/banknote.txt', header=None)
-X, Y = file.loc[:, 0:3], file.loc[:, 4]
-X = scaler.fit_transform(X)
+class FMDataBasket(DataBasket):
+    def get_date(self, file_address):
+        scaler = MinMaxScaler()
+        file = pd.read_csv(file_address, header=None)
+        X, Y = file.loc[:, 0:3], file.loc[:, 4]
+        X = scaler.fit_transform(X)
+
+        return X, Y
+
+    def split_data(self, X, Y):
+        X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, stratify=Y)
+
+        return X_train, X_test, Y_train, Y_test
+
+basket = FMDataBasket()
+X, Y = basket.get_date(file_address="FM/data/banknote.txt")
+X_train, X_test, Y_train, Y_test = basket.split_data(X, Y)
 
 n = X.shape[0]
 p = X.shape[1]
@@ -70,7 +84,6 @@ def train_on_batch(model, optimizer, accuracy, inputs, targets):
 
 # 반복 학습 함수
 def train(epochs):
-    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, stratify=Y)
 
     train_ds = tf.data.Dataset.from_tensor_slices(
         (tf.cast(X_train, tf.float32), tf.cast(Y_train, tf.float32))).shuffle(500).batch(8)
