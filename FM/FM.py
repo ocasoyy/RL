@@ -1,5 +1,5 @@
 # FM
-from config import DataBasket
+import FMconfig
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
@@ -14,30 +14,29 @@ tf.config.list_physical_devices('GPU')
 # tf.debugging.assert_equal(y_pred.shape, (batch_size, ))
 tf.keras.backend.set_floatx('float32')
 
+# config 불러오기
+k = FMconfig.K
+batch_size= FMconfig.BATCH_SIZE
+epochs= FMconfig.EPOCHS
+
+
 # 데이터 로드
-class FMDataBasket(DataBasket):
-    def get_date(self, file_address):
-        scaler = MinMaxScaler()
-        file = pd.read_csv(file_address, header=None)
+def get_date(file_address):
+    scaler = MinMaxScaler()
+    file = pd.read_csv(file_address, header=None)
+    try:
         X, Y = file.loc[:, 0:3], file.loc[:, 4]
         X = scaler.fit_transform(X)
+        n, p = X.shape[0], X.shape[1]
+        return X, Y, n, p
 
-        return X, Y
+    except KeyError as error:
+        print(error)
 
-    def split_data(self, X, Y):
-        X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, stratify=Y)
 
-        return X_train, X_test, Y_train, Y_test
+X, Y, n, p =get_date(file_address="data/banknote.txt")
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, stratify=Y)
 
-basket = FMDataBasket()
-X, Y = basket.get_date(file_address="FM/data/banknote.txt")
-X_train, X_test, Y_train, Y_test = basket.split_data(X, Y)
-
-n = X.shape[0]
-p = X.shape[1]
-k = 3
-batch_size = 8
-epochs = 20
 
 # 참고: 한 batch만 불러오고 싶으면
 # x, y = next(iter(train_ds))
@@ -60,9 +59,9 @@ class FM(tf.keras.Model):
             keepdims=False
         )
 
-        y_hat = tf.math.sigmoid(self.w_0 + linear_terms + interactions)
+        y_pred = tf.math.sigmoid(self.w_0 + linear_terms + interactions)
 
-        return y_hat
+        return y_pred
 
 
 # Forward
@@ -94,16 +93,17 @@ def train(epochs):
     model = FM()
     optimizer = tf.keras.optimizers.SGD(learning_rate=0.01)
     accuracy = BinaryAccuracy(threshold=0.5)
-    loss_history = []
 
     for i in range(epochs):
-      for x, y in train_ds:
-          loss = train_on_batch(model, optimizer, accuracy, x, y)
-          loss_history.append(loss)
+        loss_history = []
 
-      if i % 2== 0:
-          print("스텝 {:03d}에서 누적 평균 손실: {:.4f}".format(i, np.mean(loss_history)))
-          print("스텝 {:03d}에서 누적 train 정확도: {:.4f}".format(i, accuracy.result().numpy()))
+        for x, y in train_ds:
+            loss = train_on_batch(model, optimizer, accuracy, x, y)
+            loss_history.append(loss)
+
+        if i % 2== 0:
+            print("스텝 {:03d}에서 Loss: {:.4f}".format(i, np.mean(loss_history)))
+            print("스텝 {:03d}에서 누적 train 정확도: {:.4f}".format(i, accuracy.result().numpy()))
 
 
     test_accuracy = BinaryAccuracy(threshold=0.5)
