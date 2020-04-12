@@ -1,24 +1,14 @@
 # Preprocess
-
-import config
-
-import numpy as np
+from itertools import repeat
 import pandas as pd
-import tensorflow as tf
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.model_selection import train_test_split
 
-pd.options.display.max_rows = 50
-pd.options.display.max_columns = 50
-
-file = pd.read_csv('data/adult.data', header=None)
-X = file.loc[:, 0:13]
-Y = file.loc[:, 14].map({' <=50K': 0, ' >50K': 1})
-
-X.columns = config.ALL_FIELDS
+# pd.options.display.max_rows = 50
+# pd.options.display.max_columns = 50
 
 def get_X(X, all_fields, continuous_fields, categorical_fields):
     field_dict = dict()
+    field_index = []
     X_modified = pd.DataFrame()
 
     for index, col in enumerate(X.columns):
@@ -31,19 +21,17 @@ def get_X(X, all_fields, continuous_fields, categorical_fields):
             X_cont = pd.DataFrame(scaler.fit_transform(X[[col]]),
                                   columns=[col])
 
-            field_dict[index] = col
+            field_dict[index] = [col]
+            field_index.append(index)
             X_modified = pd.concat([X_modified, X_cont], axis=1)
 
         if col in categorical_fields:
             X_cat_col = pd.get_dummies(X[col], prefix=col, prefix_sep='-')
             field_dict[index] = list(X_cat_col.columns)
+            field_index.extend(repeat(index, X_cat_col.shape[1]))
             X_modified = pd.concat([X_modified, X_cat_col], axis=1)
 
     print('X shape: {}'.format(X_modified.shape))
 
-    return field_dict, X_modified
-
-
-field_dict, X_modified = get_X(X, config.ALL_FIELDS, config.CONT_FIELDS, config.CAT_FIELDS)
-X_train, X_test, Y_train, Y_test = train_test_split(X_modified, Y, test_size=0.2, stratify=Y)
+    return field_dict, field_index, X_modified
 
