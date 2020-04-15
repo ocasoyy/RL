@@ -6,6 +6,9 @@ from sklearn.preprocessing import MinMaxScaler
 # pd.options.display.max_rows = 50
 # pd.options.display.max_columns = 50
 
+# 모든 연속형 변수들을 앞쪽에 배치하고
+# 범주형 변수들을 그 뒤에 배치한다.
+
 def get_X(X, all_fields, continuous_fields, categorical_fields):
     field_dict = dict()
     field_index = []
