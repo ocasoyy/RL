@@ -4,6 +4,9 @@ import tensorflow as tf
 class FM_component(layers.Layer):
     def __init__(self):
         super(FM_component, self).__init__()
+        self.w
+
+    def build(self):
         pass
 
     def call(self, inputs):
