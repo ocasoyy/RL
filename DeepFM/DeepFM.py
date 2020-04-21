@@ -2,6 +2,7 @@
 
 import config
 from preprocess import get_X
+from layers import FM_layer
 
 import numpy as np
 import pandas as pd
@@ -15,109 +16,43 @@ tf.keras.backend.set_floatx('float32')
 
 class DeepFM(tf.keras.Model):
 
-    def __init__(self, embedding_size, num_feature, num_field, field_index):
+    def __init__(self, num_feature, num_field, embedding_size, field_index):
         super(DeepFM, self).__init__()
         self.embedding_size = embedding_size    # k: 임베딩 벡터의 차원(크기)
         self.num_feature = num_feature          # 원래 feature 개수
         self.num_field = num_field              # m: grouped field 개수
         self.field_index = field_index          # 인코딩된 X의 칼럼들이 본래 어디 소속이었는지
 
-        self.w = tf.Variable(tf.random.normal(shape=[num_feature],
-                                              mean=0.0, stddev=1.0), name='w')
-        self.V = tf.Variable(tf.random.normal(shape=(num_feature, embedding_size),
-                                              mean=0.0, stddev=0.01), name='V')
-        #self.V = tf.keras.layers.Embedding(input_dim=num_feature,
-        #                                   output_dim=embedding_size,
-        #                                   embeddings_initializer='uniform')
-        # --> 이걸 tf.nn.embedding_lookup으로 각각의 필드에 대해 복제한다.
+        self.fm_layer = FM_layer(num_feature, num_field, embedding_size, field_index)
 
-        #self.layers1 = tf.keras.layers.Dense(units=32, activation='relu')
-        #self.layers2 = tf.keras.layers.Dense(units=16, activation='relu')
-        #self.layers3 = tf.keras.layers.Dense(units=1, activation='sigmoid')
+        self.layers1 = tf.keras.layers.Dense(units=64, activation='relu')
+        self.layers2 = tf.keras.layers.Dense(units=16, activation='relu')
+        self.layers3 = tf.keras.layers.Dense(units=2, activation='relu')
+
+        self.final = tf.keras.layers.Dense(units=1, activation='sigmoid')
 
     def __repr__(self):
         pass
 
     def call(self, inputs):
-        # Embedding
-        # embeds = tf.nn.embedding_lookup(params=self.V, ids=self.field_index)
-        # x_batch = tf.reshape(inputs, [-1, self.num_feature , 1])
-        # embeddings = tf.multiply(embeds, x_batch)    # (None, 131, 5)
-        # embeds = self.V(inputs=inputs)               # (None, 131, 5)
+        # 1) FM Component: (8, 2)
+        y_fm, new_inputs = self.fm_layer(inputs)
+        # new_inputs = self.fm_layer.new_inputs
 
-        # TODO: drop out or L2 Regularization 추가
-
-        # Deep Component를 위한 Embedding inputs 생성
-        # -> 0이 아닌 행들만 모아 만든 (14, 5) Dense Tensor
-        # x 자체의 1, 0을 이용하자
-        # mask = tf.not_equal(embeddings, 0)
-        # non_zero_array = tf.boolean_mask(embeddings, mask, axis=0)
-        # (8, 14, 5)
-        # embedding_inputs = tf.reshape(non_zero_array, [-1, self.num_field, self.embedding_size])
-
-        # 1) FM Component
-        # (8, )
-        # linear_terms = tf.nn.embedding_lookup(params=self.w, ids=self.field_index)
-        linear_terms = tf.reduce_sum(
-            tf.math.multiply(self.w, inputs), axis=1, keepdims=False)
-
-        # (8, )
-        interactions = 0.5 * tf.reduce_sum(
-            tf.subtract(
-                tf.square(tf.matmul(inputs, self.V)),
-                tf.matmul(tf.square(inputs), tf.square(self.V))),
-            1, keepdims=False
-        )
-
-        # (8, )
-        # y_fm = tf.concat([self.linear_terms, self.interactions], axis=1)
-        y_fm = tf.math.sigmoid(linear_terms + interactions)
+        # retrieve Dense Vectors: (None, 131*5)
+        new_inputs = tf.reshape(new_inputs, [-1, self.num_feature*self.embedding_size])
 
         # 2) Deep Component
-        #y_deep = tf.reshape(self.embeddings, [-1, self.num_feature*self.embedding_size])
-        #y_deep = self.layers1(inputs=y_deep)
-        #y_deep = self.layers2(inputs=y_deep)
+        # fm_layer
+        y_deep = self.layers1(new_inputs)
+        y_deep = self.layers2(y_deep)
+        y_deep = self.layers3(y_deep)
 
-        # Final Output
-        #y_pred = self.layers3(inputs=tf.concat([y_fm, y_deep], axis=1))
-        #y_pred = tf.reshape(y_pred, [-1, ])
+        y_pred = tf.concat([y_fm, y_deep], 1)
+        y_pred = self.final(y_pred)
+        y_pred = tf.reshape(y_pred, [-1, ])
 
-        return y_fm
-
-
-
-"""
-train_ds = tf.data.Dataset.from_tensor_slices(
-    (tf.cast(X_modified.values, tf.float32), tf.cast(Y, tf.float32))).shuffle(300000).batch(8)
-
-x, y = next(iter(train_ds))
-
-embedding_size = 5
-num_field = 14
-num_feature = 131
-
-w = tf.Variable(tf.random.normal(shape=[num_field], mean=0.0, stddev=1.0))
-# V = tf.Variable(tf.random.normal(shape=(num_feature, embedding_size), mean=0.0, stddev=0.01))
-EB = tf.keras.layers.Embedding(input_dim=num_feature, output_dim=embedding_size)
-
-# embeds = tf.nn.embedding_lookup(params=V, ids=field_index) # 131, 5
-# x_batch = tf.reshape(x, [-1, num_feature, 1])              # 8, 131, 1
-# embeddings = tf.multiply(V, x_batch)                  # 8, 131, 5
-embeds = EB(inputs=x)
-
-linear_terms = tf.nn.embedding_lookup(params=w, ids=field_index)
-linear_terms = tf.reduce_sum(tf.math.multiply(linear_terms, x), axis=1, keepdims=False)     # 8, 131
-
-# (8, 5)
-interactions = 0.5 * tf.subtract(
-       tf.square(tf.reduce_sum(embeds, [1, 2])),
-       tf.reduce_sum(tf.square(embeds), [1, 2]),
-)
-
-# (8, 136)
-# y_fm = tf.concat([linear_terms, interactions], axis=1)
-y_fm = tf.math.sigmoid(linear_terms + interactions)
-"""
+        return y_pred
 
 
 
@@ -182,4 +117,4 @@ def train(epochs, batch_size):
 
 
 if __name__ == '__main__':
-    train(epochs=50, batch_size=256)
+    train(epochs=100, batch_size=512)
