@@ -23,13 +23,13 @@ class FM_layer(tf.keras.layers.Layer):
         embeds = tf.nn.embedding_lookup(params=self.V, ids=self.field_index)
 
         # Deep Component에서 쓸 Input
-        new_inputs = tf.math.multiply(x_batch, embeds)    # (num_batch, num_feature, embedding_size)
+        new_inputs = tf.math.multiply(x_batch, embeds)    # (batch_size, num_feature, embedding_size)
 
-        # (num_batch, )
+        # (batch_size, )
         linear_terms = tf.reduce_sum(
             tf.math.multiply(self.w, inputs), axis=1, keepdims=False)
 
-        # (num_batch, )
+        # (batch_size, )
         interactions = 0.5 * tf.subtract(
             tf.square(tf.reduce_sum(new_inputs, [1, 2])),
             tf.reduce_sum(tf.square(new_inputs), [1, 2])

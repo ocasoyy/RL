@@ -28,10 +28,10 @@ class DeepFM(tf.keras.Model):
             self.num_field, self.num_feature, self.embedding_size)
 
     def call(self, inputs):
-        # 1) FM Component: (num_batch, 2)
+        # 1) FM Component: (batch_size, 2)
         y_fm, new_inputs = self.fm_layer(inputs)
 
-        # retrieve Dense Vectors: (num_batch, num_feature*embedding_size)
+        # retrieve Dense Vectors: (batch_size, num_feature*embedding_size)
         new_inputs = tf.reshape(new_inputs, [-1, self.num_feature*self.embedding_size])
 
         # 2) Deep Component

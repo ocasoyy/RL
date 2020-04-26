@@ -32,8 +32,6 @@ def get_data():
     return train_ds, test_ds, field_dict, field_index
 
 
-
-# Forward
 def train_on_batch(model, optimizer, acc, auc, inputs, targets):
     with tf.GradientTape() as tape:
         y_pred = model(inputs)
@@ -51,7 +49,6 @@ def train_on_batch(model, optimizer, acc, auc, inputs, targets):
     return loss
 
 
-# 반복 학습 함수
 def train(epochs):
     train_ds, test_ds, field_dict, field_index = get_data()
 
