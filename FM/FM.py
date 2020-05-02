@@ -21,7 +21,7 @@ epochs= FMconfig.EPOCHS
 
 
 # 데이터 로드
-def get_date(file_address):
+def get_data(file_address):
     scaler = MinMaxScaler()
     file = pd.read_csv(file_address, header=None)
     try:
@@ -34,7 +34,7 @@ def get_date(file_address):
         print(error)
 
 
-X, Y, n, p =get_date(file_address="data/banknote.txt")
+X, Y, n, p =get_data(file_address="data/banknote.txt")
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, stratify=Y)
 
 
@@ -82,13 +82,13 @@ def train_on_batch(model, optimizer, accuracy, inputs, targets):
 
 
 # 반복 학습 함수
-def train(epochs):
+def train(epochs, batch_size):
 
     train_ds = tf.data.Dataset.from_tensor_slices(
-        (tf.cast(X_train, tf.float32), tf.cast(Y_train, tf.float32))).shuffle(500).batch(8)
+        (tf.cast(X_train, tf.float32), tf.cast(Y_train, tf.float32))).shuffle(500).batch(batch_size)
 
     test_ds = tf.data.Dataset.from_tensor_slices(
-        (tf.cast(X_test, tf.float32), tf.cast(Y_test, tf.float32))).shuffle(200).batch(8)
+        (tf.cast(X_test, tf.float32), tf.cast(Y_test, tf.float32))).shuffle(200).batch(batch_size)
 
     model = FM()
     optimizer = tf.keras.optimizers.SGD(learning_rate=0.01)
@@ -115,5 +115,5 @@ def train(epochs):
 
 
 if __name__ == '__main__':
-    train(epochs=epochs)
+    train(epochs=epochs, batch_size=8)
 
