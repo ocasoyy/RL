@@ -1,6 +1,6 @@
 import config
 from preprocess import get_modified_data
-# from AFM import AFM
+from AFM import AFM
 
 import numpy as np
 import pandas as pd
@@ -16,7 +16,7 @@ def get_data():
     Y = file.loc[:, 14].map({' <=50K': 0, ' >50K': 1})
 
     X.columns = config.ORIGINAL_FIELDS
-    X_modified = get_modified_data(X, config.CONT_FIELDS, config.CAT_FIELDS)
+    X_modified, num_feature = get_modified_data(X, config.CONT_FIELDS, config.CAT_FIELDS)
 
     X_train, X_test, Y_train, Y_test = train_test_split(X_modified, Y, test_size=0.2, stratify=Y)
 
@@ -28,7 +28,7 @@ def get_data():
         (tf.cast(X_test.values, tf.float32), tf.cast(Y_test, tf.float32))) \
         .shuffle(10000).batch(config.BATCH_SIZE)
 
-    return train_ds, test_ds
+    return train_ds, test_ds, num_feature
 
 
 def train_on_batch(model, optimizer, acc, auc, inputs, targets):
@@ -49,22 +49,27 @@ def train_on_batch(model, optimizer, acc, auc, inputs, targets):
 
 
 def train(epochs):
-    train_ds, test_ds = get_data()
+    train_ds, test_ds, num_feature = get_data()
 
-    model = AFM()
+    model = AFM(config.NUM_FIELD, num_feature, config.NUM_CONT,
+                config.EMBEDDING_SIZE, config.HIDDEN_SIZE)
 
     optimizer = tf.keras.optimizers.SGD(learning_rate=0.01)
 
-    print("Start Training: Batch Size: {}, Embedding Size: {}".format(config.BATCH_SIZE, config.EMBEDDING_SIZE))
+    print("Start Training: Batch Size: {}, Embedding Size: {}, Hidden Size: {}".\
+        format(config.BATCH_SIZE, config.EMBEDDING_SIZE, config.HIDDEN_SIZE))
     start = perf_counter()
     for i in range(epochs):
         acc = BinaryAccuracy(threshold=0.5)
         auc = AUC()
         loss_history = []
+        cnt = 0
 
         for x, y in train_ds:
+            print(cnt)
             loss = train_on_batch(model, optimizer, acc, auc, x, y)
             loss_history.append(loss)
+            cnt += 1
 
         print("Epoch {:03d}: 누적 Loss: {:.4f}, Acc: {:.4f}, AUC: {:.4f}".format(
             i, np.mean(loss_history), acc.result().numpy(), auc.result().numpy()))

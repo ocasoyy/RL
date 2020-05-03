@@ -13,8 +13,10 @@ CAT_FIELDS = ['workclass', 'education', 'marital-status', 'occupation',
 
 ALL_FIELDS = CONT_FIELDS + CAT_FIELDS
 
+NUM_FIELD = len(ALL_FIELDS)
 NUM_CONT = len(CONT_FIELDS)
 
 # Hyper-parameters for Experiment
-BATCH_SIZE = 8
+BATCH_SIZE = 256
 EMBEDDING_SIZE = 5
+HIDDEN_SIZE = 16
