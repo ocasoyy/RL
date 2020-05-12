@@ -18,5 +18,16 @@ NUM_CONT = len(CONT_FIELDS)
 
 # Hyper-parameters for Experiment
 BATCH_SIZE = 256
-EMBEDDING_SIZE = 5
-HIDDEN_SIZE = 16
+EMBEDDING_SIZE = 10
+HIDDEN_SIZE = 64
+
+# for Pair-wise Interaction Layer
+MASKS = []
+for i in range(NUM_FIELD):
+    flag = 1 + i
+
+    MASKS.extend([False]*(flag))
+    MASKS.extend([True]*(NUM_FIELD - flag))
+
+# MASKS.extend(list(range(1 + (NUM_FIELD + 1) * i, NUM_FIELD + NUM_FIELD * i, 1)))
+

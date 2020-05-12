@@ -1,6 +1,15 @@
 import tensorflow as tf
 import numpy as np
-from itertools import combinations
+import config
+
+"""
+embedding_size = config.EMBEDDING_SIZE
+num_field = config.NUM_FIELD
+num_feature = 108
+num_cont = config.NUM_CONT
+num_cat = num_field - num_cont
+"""
+
 
 
 class Embedding_layer(tf.keras.layers.Layer):
@@ -41,25 +50,49 @@ class Embedding_layer(tf.keras.layers.Layer):
         return masked_inputs
 
 
+# 지금 요 녀석이 오래 걸린다.
 class Pairwise_Interaction_Layer(tf.keras.layers.Layer):
     def __init__(self, num_field, num_feature, embedding_size):
         super(Pairwise_Interaction_Layer, self).__init__()
         self.embedding_size = embedding_size    # k: 임베딩 벡터의 차원(크기)
         self.num_field = num_field              # m: 인코딩 이전 feature 수
         self.num_feature = num_feature          # p: 인코딩 이후 feature 수, m <= p
-        self.comb_list = list(range(0, num_field, 1))
+
+        masks = tf.convert_to_tensor(config.MASKS)    # (num_field**2)
+        masks = tf.expand_dims(masks, -1)             # (num_field**2, 1)
+        masks = tf.tile(masks, [1, embedding_size])   # (num_field**2, embedding_size)
+        self.masks = tf.expand_dims(masks, 0)         # (1, num_field**2, embedding_size)
 
 
     def call(self, inputs):
         batch_size = inputs.shape[0]
-        interactions = []
 
+        """
+        Logic은 아래와 같다. 하지만 아래처럼 하면 엄청 오래 걸린다.
+
+        interactions = []
+        comb_list = list(range(0, num_field, 1))
         for b in range(batch_size):
             for i, j in list(combinations(self.comb_list, 2)):
                 interactions.append(tf.multiply(inputs[b, i, :], inputs[b, j, :]))
 
         pairwise_interactions = tf.reshape(tf.stack(interactions),
                                            (batch_size, -1, self.embedding_size))
+        """
+
+        # a, b shape: (batch_size, num_field^2, embedding_size)
+        a = tf.expand_dims(inputs, 2)
+        a = tf.tile(a, [1, 1, self.num_field, 1])
+        a = tf.reshape(a, [batch_size, self.num_field**2, self.embedding_size])
+        b = tf.tile(inputs, [1, self.num_field, 1])
+
+        # ab, mask_tensor: (batch_size, num_field^2, embedding_size)
+        ab = tf.multiply(a, b)
+        mask_tensor = tf.tile(self.masks, [batch_size, 1, 1])
+
+        # pairwise_interactions: (batch_size, num_field C 2, embedding_size)
+        pairwise_interactions = tf.reshape(tf.boolean_mask(ab, mask_tensor),
+                                           [batch_size, -1, self.embedding_size])
 
         return pairwise_interactions
 

@@ -63,13 +63,10 @@ def train(epochs):
         acc = BinaryAccuracy(threshold=0.5)
         auc = AUC()
         loss_history = []
-        cnt = 0
 
         for x, y in train_ds:
-            print(cnt)
             loss = train_on_batch(model, optimizer, acc, auc, x, y)
             loss_history.append(loss)
-            cnt += 1
 
         print("Epoch {:03d}: 누적 Loss: {:.4f}, Acc: {:.4f}, AUC: {:.4f}".format(
             i, np.mean(loss_history), acc.result().numpy(), auc.result().numpy()))
@@ -82,10 +79,11 @@ def train(epochs):
         test_auc.update_state(y, y_pred)
 
     print("테스트 ACC: {:.4f}, AUC: {:.4f}".format(test_acc.result().numpy(), test_auc.result().numpy()))
-    print("Batch Size: {}, Embedding Size: {}".format(config.BATCH_SIZE, config.EMBEDDING_SIZE))
+    print("Batch Size: {}, Embedding Size: {}, Hidden Size: {}".format(
+        config.BATCH_SIZE, config.EMBEDDING_SIZE, config.HIDDEN_SIZE))
     print("걸린 시간: {:.3f}".format(perf_counter() - start))
-    model.save_weights('weights/weights-epoch({})-batch({})-embedding({}).h5'.format(
-        epochs, config.BATCH_SIZE, config.EMBEDDING_SIZE))
+    model.save_weights('weights/weights-epoch({})-batch({})-embedding({})-hidden({}).h5'.format(
+        epochs, config.BATCH_SIZE, config.EMBEDDING_SIZE, config.HIDDEN_SIZE))
 
 
 if __name__ == '__main__':
