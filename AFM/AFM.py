@@ -25,11 +25,11 @@ class AFM(tf.keras.Model):
         self.p = tf.Variable(tf.random.normal(shape=(embedding_size, 1),
                                               mean=0.0, stddev=0.1))
 
-        self.dropout = tf.keras.layers.Dropout(rate=0.2)
+        self.dropout = tf.keras.layers.Dropout(rate=config.DROPOUT_RATE)
 
 
     def __repr__(self):
-        pass
+        return "AFM Model: embedding{}, hidden{}".format(self.embedding_size, self.hidden_size)
 
 
     def call(self, inputs):
@@ -40,12 +40,11 @@ class AFM(tf.keras.Model):
         masked_inputs = self.embedding_layer(inputs)
         pairwise_interactions = self.pairwise_interaction_layer(masked_inputs)
 
-        # Dropout
+        # Dropout and Attention Score
         pairwise_interactions = self.dropout(pairwise_interactions)
         attention_score = self.attention_pooling_layer(pairwise_interactions)
 
         # (None, 조합 수, embedding_size)
-        # 단점: 연속형 변수의 값이 0일 경우 아래 output 또한 0이 된다.
         attention_interactions = tf.multiply(pairwise_interactions, attention_score)
 
         # (None, embedding_size)

@@ -32,9 +32,12 @@ def get_data():
 
 
 def train_on_batch(model, optimizer, acc, auc, inputs, targets):
+    regularizer = tf.keras.regularizers.l2(0.01)
+
     with tf.GradientTape() as tape:
         y_pred = model(inputs)
-        loss = tf.keras.losses.binary_crossentropy(from_logits=False, y_true=targets, y_pred=y_pred)
+        loss = tf.keras.losses.binary_crossentropy(
+            from_logits=False, y_true=targets, y_pred=y_pred) + regularizer(model.w)
 
     grads = tape.gradient(target=loss, sources=model.trainable_variables)
 
@@ -85,6 +88,8 @@ def train(epochs):
     model.save_weights('weights/weights-epoch({})-batch({})-embedding({})-hidden({}).h5'.format(
         epochs, config.BATCH_SIZE, config.EMBEDDING_SIZE, config.HIDDEN_SIZE))
 
+    return model
+
 
 if __name__ == '__main__':
-    train(epochs=100)
+    model = train(epochs=50)

@@ -1,6 +1,5 @@
 # Configuration File
 # 모든 칼럼 이름, 연속형 변수/범주형 변수 목록을 List로 저장한다.
-
 ORIGINAL_FIELDS = ['age', 'workclass', 'fnlwgt', 'education', 'education-num',
                    'marital-status', 'occupation', 'relationship',
                    'race', 'sex', 'capital-gain', 'capital-loss',
@@ -20,6 +19,7 @@ NUM_CONT = len(CONT_FIELDS)
 BATCH_SIZE = 256
 EMBEDDING_SIZE = 10
 HIDDEN_SIZE = 64
+DROPOUT_RATE = 0.2
 
 # for Pair-wise Interaction Layer
 MASKS = []
@@ -28,6 +28,4 @@ for i in range(NUM_FIELD):
 
     MASKS.extend([False]*(flag))
     MASKS.extend([True]*(NUM_FIELD - flag))
-
-# MASKS.extend(list(range(1 + (NUM_FIELD + 1) * i, NUM_FIELD + NUM_FIELD * i, 1)))
 

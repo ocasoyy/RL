@@ -2,15 +2,6 @@ import tensorflow as tf
 import numpy as np
 import config
 
-"""
-embedding_size = config.EMBEDDING_SIZE
-num_field = config.NUM_FIELD
-num_feature = 108
-num_cont = config.NUM_CONT
-num_cat = num_field - num_cont
-"""
-
-
 
 class Embedding_layer(tf.keras.layers.Layer):
     def __init__(self, num_field, num_feature, num_cont, embedding_size):
@@ -50,7 +41,6 @@ class Embedding_layer(tf.keras.layers.Layer):
         return masked_inputs
 
 
-# 지금 요 녀석이 오래 걸린다.
 class Pairwise_Interaction_Layer(tf.keras.layers.Layer):
     def __init__(self, num_field, num_feature, embedding_size):
         super(Pairwise_Interaction_Layer, self).__init__()
@@ -124,10 +114,4 @@ class Attention_Pooling_Layer(tf.keras.layers.Layer):
         attention_score = tf.nn.softmax(e)
 
         return attention_score
-
-
-
-
-
-
 
