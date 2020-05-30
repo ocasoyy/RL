@@ -30,17 +30,21 @@ train_weights = train.multiply(weights).tocoo()
 from collections import OrderedDict
 from hyperopt import fmin, hp, tpe, Trials, space_eval, STATUS_OK
 
+
 # Define Search Space
+space = [hp.choice('no_components', list(range(10, 30, 10))),
+         hp.choice('learning_schedule', ['adagrad', 'adadelta'])]
+
+"""
 space = OrderedDict(
     [('no_components', hp.choice('no_components', list(range(10, 30, 10)))),
      ('learning_schedule', hp.choice('learning_schedule', ['adagrad', 'adadelta']))
     ]
 )
-
+"""
 # Define Objective Function
 def objective(params):
-    no_components = params['no_components']
-    learning_schedule = params['learning_schedule']
+    no_components, learning_schedule = params
 
     model = LightFM(no_components=no_components,
                     learning_schedule=learning_schedule,
@@ -55,6 +59,7 @@ def objective(params):
               verbose=False)
 
     test_precision = precision_at_k(model, test, k=5, item_features=item_features).mean()
+    print("no_comp: {}, lrn_schd: {}, precision: {.4f}".format(no_components, learning_schedule, test_precision))
     # test_auc = auc_score(model, test, item_features=item_features).mean()
     output = -test_precision
 
@@ -63,8 +68,20 @@ def objective(params):
 
     return output
 
-best_model = fmin(fn=objective, space=space, algo=tpe.suggest, max_evals=10)
+best_params = fmin(fn=objective, space=space, algo=tpe.suggest, max_evals=5)
+no_components, learning_schedule = best_params.values()
 
+model = LightFM(no_components=no_components,
+                learning_schedule=learning_schedule,
+                loss='warp',
+                learning_rate=0.05,
+                random_state=0)
+
+model.fit(interactions=train,
+          item_features=item_features,
+          sample_weight=train_weights,
+          epochs=5,
+          verbose=False)
 
 
 # Find Similar Items
