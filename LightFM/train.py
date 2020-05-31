@@ -27,39 +27,33 @@ train_weights = train.multiply(weights).tocoo()
 
 
 # Hyper Optimization
-from collections import OrderedDict
-from hyperopt import fmin, hp, tpe, Trials, space_eval, STATUS_OK
+from hyperopt import fmin, hp, tpe, Trials
 
 
 # Define Search Space
-space = [hp.choice('no_components', list(range(10, 30, 10))),
-         hp.choice('learning_schedule', ['adagrad', 'adadelta'])]
+trials = Trials()
+space = [hp.choice('no_components', range(10, 50, 10)),
+         hp.uniform('learning_rate', 0.01, 0.05)]
 
-"""
-space = OrderedDict(
-    [('no_components', hp.choice('no_components', list(range(10, 30, 10)))),
-     ('learning_schedule', hp.choice('learning_schedule', ['adagrad', 'adadelta']))
-    ]
-)
-"""
+
 # Define Objective Function
 def objective(params):
-    no_components, learning_schedule = params
+    no_components, learning_rate = params
 
     model = LightFM(no_components=no_components,
-                    learning_schedule=learning_schedule,
+                    learning_schedule='adagrad',
                     loss='warp',
-                    learning_rate=0.05,
+                    learning_rate=learning_rate,
                     random_state=0)
 
     model.fit(interactions=train,
               item_features=item_features,
               sample_weight=train_weights,
-              epochs=5,
+              epochs=3,
               verbose=False)
 
     test_precision = precision_at_k(model, test, k=5, item_features=item_features).mean()
-    print("no_comp: {}, lrn_schd: {}, precision: {.4f}".format(no_components, learning_schedule, test_precision))
+    print("no_comp: {}, lrn_rate: {:.5f}, precision: {:.5f}".format(no_components, learning_rate, test_precision))
     # test_auc = auc_score(model, test, item_features=item_features).mean()
     output = -test_precision
 
@@ -68,11 +62,11 @@ def objective(params):
 
     return output
 
-best_params = fmin(fn=objective, space=space, algo=tpe.suggest, max_evals=5)
-no_components, learning_schedule = best_params.values()
+best_params = fmin(fn=objective, space=space, algo=tpe.suggest, max_evals=10, trials=trials)
+no_components, _ = best_params.values()
 
 model = LightFM(no_components=no_components,
-                learning_schedule=learning_schedule,
+                learning_schedule='adagrad',
                 loss='warp',
                 learning_rate=0.05,
                 random_state=0)
@@ -80,12 +74,11 @@ model = LightFM(no_components=no_components,
 model.fit(interactions=train,
           item_features=item_features,
           sample_weight=train_weights,
-          epochs=5,
-          verbose=False)
+          epochs=10,
+          verbose=True)
 
 
 # Find Similar Items
-# def similar_items(item_id, item_features, model, N=10):
 item_biases, item_embeddings = model.get_item_representations(features=item_features)
 
 def make_best_items_report(item_embeddings, book_id, num_search_items=10):
@@ -106,8 +99,8 @@ def make_best_items_report(item_embeddings, book_id, num_search_items=10):
 
     for similar_item_id, score in similar_item_id_and_scores:
         book_id = similar_item_id + 1
-        title = item_meta[item_meta['book_id'] == book_id].values[0][1]
-        author = item_meta[item_meta['book_id'] == book_id].values[0][3]
+        title = item_meta[item_meta['book_id'] == book_id].values[0][3]
+        author = item_meta[item_meta['book_id'] == book_id].values[0][1]
 
         row = pd.Series([book_id, title, author, score], index=best_items.columns)
         best_items = best_items.append(row, ignore_index=True)

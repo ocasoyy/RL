@@ -5,12 +5,11 @@ from scipy.io import mmwrite
 
 
 # Data Load
-# rating source: build_interactions 재료, list of tuples
+# ratings_source: build_interactions 재료, list of tuples
 # --> [(user1, item1), (user2, item5), ... ]
 # item_features_source: build_item_features 재료
 # --> [(item1, [feature, feature, ...]), (item2, [feature, feature, ...])]
 ratings = pd.read_csv('data/ratings.csv')
-# ratings_source:
 ratings_source = [(ratings['user_id'][i], ratings['book_id'][i]) for i in range(ratings.shape[0])]
 
 item_meta = pd.read_csv('data/books.csv')
