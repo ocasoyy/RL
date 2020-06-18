@@ -2,16 +2,15 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="13092d76-976c-4036-ac40-4b7bde87643d" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Coder/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Coder/.idea/Embedding.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Coder/.idea/inspectionProfiles/profiles_settings.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Coder/.idea/misc.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Coder/.idea/modules.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Coder/.idea/vcs.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Coder/AE.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Coder/NMF.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Tree/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Tree/.idea/Embedding.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Tree/.idea/inspectionProfiles/profiles_settings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Tree/.idea/misc.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Tree/.idea/modules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Tree/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Tree/shap.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Tree/submission.csv" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
